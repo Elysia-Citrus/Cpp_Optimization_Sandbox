@@ -1,27 +1,29 @@
-#include <cstdlib> // 包含 rand()
-#include <ctime>   // 包含 time()
+#include <pybind11/pybind11.h>
+#include <cstdlib>
+#include <ctime>
 
-// 这里的 extern "C" __declspec(dllexport)告诉编译器：“把这个函数名字暴露出去，让外面的 Python 能找到它”
-extern "C" __declspec(dllexport) double calculate_pi(int iterations) {
+// 这里的 namespace py = ... 是为了简写，不然每次都要写 pybind11::
+namespace py = pybind11;
 
-    // 初始化随机数种子（为了简单，这里用基础的 rand）
-    // 在生产环境中通常会用更高级的随机数生成器
+// 1. 正常的 C++ 函数，完全不用管 Python 的类型
+double calculate_pi_cpp(int iterations) {
     srand(time(NULL));
-
     int inside_circle = 0;
-
     for (int i = 0; i < iterations; i++) {
-        // 生成 0 到 1 之间的随机坐标 (x, y)
-        // rand() 返回 0 到 RAND_MAX，除以 RAND_MAX 得到 0.0~1.0
         double x = (double)rand() / RAND_MAX;
         double y = (double)rand() / RAND_MAX;
-
-        // 判断是否落在圆内 (x^2 + y^2 <= 1)
         if (x * x + y * y <= 1.0) {
             inside_circle++;
         }
     }
-
-    // 蒙特卡洛公式：Pi = 4 * (圆内点数 / 总点数)
     return 4.0 * inside_circle / iterations;
+}
+
+// 2. 定义 Python 模块 (这是 pybind11 的魔法)
+// 这里的 "Cpp_Optimization_Sandbox" 必须和你的文件名(即项目名)一致！
+PYBIND11_MODULE(Cpp_Optimization_Sandbox, m) {
+    m.doc() = "This my first pybind11 speeding module"; // 模块文档字符串
+
+    // 将 C++ 函数 calculate_pi_cpp 暴露给 Python，名字叫 calculate_pi
+    m.def("calculate_pi", &calculate_pi_cpp, "calulate Pi with mtklsf");
 }
